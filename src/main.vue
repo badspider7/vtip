@@ -1,22 +1,23 @@
 <template>
   <transition name="v-tip-fade">
-    <div v-show="visible"
+    <div
+      v-show="visible"
       class="v-tip-container"
       :style="boxStyle"
       :class="boxClass"
       @mouseenter="showTip"
-      @mouseleave="hiddenTip(true)">
-      <div v-show="placement"
+      @mouseleave="hiddenTip(true)"
+    >
+      <div
+        v-show="placement"
         class="v-tip-arrows"
         :class="placement"
-        :style="arrowBox">
-      </div>
+        :style="arrowBox"
+      ></div>
       <span v-if="title" class="v-tip-title">
         {{ title }}
       </span>
-      <p v-if="content"
-        class="v-tip-content"
-        :style="contentHeight">
+      <p v-if="content" class="v-tip-content" :style="contentHeight">
         {{ content }}
       </p>
       <component
@@ -25,7 +26,8 @@
         v-on="customListeners"
         :is="customComponent"
         @hidden-tip="hiddenTip"
-        @update-tip="updateTip">
+        @update-tip="updateTip"
+      >
       </component>
     </div>
   </transition>
@@ -39,43 +41,45 @@ import {
   computeArrowPos,
   computePlacementInfo,
   computeCoordinateBaseMid,
-  computeCoordinateBaseEdge
-} from './util'
+  computeCoordinateBaseEdge,
+} from "./util";
 
 // passive support check
-let supportsPassive = false
-document.addEventListener('passive-check', () => {}, {
-  get passive () { supportsPassive = { passive: true } }
-})
+let supportsPassive = false;
+document.addEventListener("passive-check", () => {}, {
+  get passive() {
+    supportsPassive = { passive: true };
+  },
+});
 
 export default {
-  name: 'Vtip',
+  name: "Vtip",
 
   props: {
     // 标题
     title: {
       type: String,
-      default: ''
+      default: "",
     },
 
     // 显示的内容
     content: {
       type: String,
-      default: ''
+      default: "",
     },
 
     // 工具函数调用时附加到自定义组件 props 上面的
     customProps: {
       type: Object,
-      default () {
-        return {}
-      }
+      default() {
+        return {};
+      },
     },
 
     // 对应 <component> 组件 is 属性
     customComponent: {
       type: [String, Function, Object],
-      default: ''
+      default: "",
     },
 
     // 用于监听自定义组件 emit 的事件
@@ -90,204 +94,252 @@ export default {
     // 用于限制 tip 展示的方向，优先级按顺序
     placements: {
       type: Array,
-      default () {
-        return ['top', 'right', 'bottom', 'left']
-      }
+      default() {
+        return ["top", "right", "bottom", "left"];
+      },
     },
 
     // tip 窗口多久后自动消失，为 <=0 不消失
     duration: {
       type: Number,
-      default: 300
+      default: 300,
     },
 
-     // 是否为 tip 添加 transfrom 过渡
+    // 是否为 tip 添加 transfrom 过渡
     transition: Boolean,
 
     // 提示用的小箭头大小
     arrowsSize: {
       type: Number,
-      default: 8
+      default: 8,
     },
 
     // 组件的宽度
     width: {
       type: [String, Number],
-      default: 'auto'
+      default: "auto",
     },
 
     // 内容的高度
     height: {
       type: [String, Number],
-      default: 'auto'
+      default: "auto",
     },
 
     // tip 的 z-index
     zIndex: {
       type: Number,
-      default: 999
+      default: 999,
     },
 
     // 主题 light dark 默认为 light
     theme: {
       type: String,
-      default: 'light'
+      default: "light",
     },
 
     // 自定义 class 的类名
     customClass: {
       type: String,
-      default: ''
-    }
+      default: "",
+    },
+
+    //根据内容超出决定是否显示
+    auto: {
+      type: Boolean,
+      default: false,
+    },
   },
 
-  data () {
-    this.containerNode = null
-    this.targetParentNode = null
-    this.visibleTimer = null
+  data() {
+    this.containerNode = null;
+    this.targetParentNode = null;
+    this.visibleTimer = null;
     return {
       // tip 的展示方向（小箭头的方向）
-      placement: '',
+      placement: "",
       visible: false,
-      arrowsPos: {}
-    }
+      arrowsPos: {},
+    };
   },
 
   computed: {
-    arrowBox () {
-      return Object.assign({
-        borderWidth: `${this.arrowsSize}px`
-      }, this.arrowsPos)
+    arrowBox() {
+      return Object.assign(
+        {
+          borderWidth: `${this.arrowsSize}px`,
+        },
+        this.arrowsPos
+      );
     },
 
-    boxStyle () {
-      const width = this.width
+    boxStyle() {
+      const width = this.width;
       return {
-        width: typeof width === 'string' ? width : `${width}px`,
-        zIndex: this.zIndex
-      }
+        width: typeof width === "string" ? width : `${width}px`,
+        zIndex: this.zIndex,
+      };
     },
 
-    boxClass () {
-      const { customClass, theme, transition } = this
-      const tsClass = transition ? 'transition-transfrom' : ''
-      return [customClass, theme, tsClass]
+    boxClass() {
+      const { customClass, theme, transition } = this;
+      const tsClass = transition ? "transition-transfrom" : "";
+      return [customClass, theme, tsClass];
     },
 
-    contentHeight () {
-      const height = this.height
+    contentHeight() {
+      const height = this.height;
       return {
-        height: typeof height === 'string' ? height : `${height}px`
-      }
-    }
+        height: typeof height === "string" ? height : `${height}px`,
+      };
+    },
   },
 
   methods: {
-    showTip () {
-      clearTimeout(this.visibleTimer)
-      this.visible = true
+    showTip() {
+      clearTimeout(this.visibleTimer);
+      this.visible = true;
     },
 
     // 隐藏 tip
-    hiddenTip (immedia) {
+    hiddenTip(immedia) {
       if (immedia) {
-        this.visible = false
+        this.visible = false;
       } else {
-        this.setVisible(false)
+        //延迟隐藏
+        this.setVisible(false);
       }
     },
 
     // 更新 tip 位置
-    updateTip () {
-      this.setContainerNode()
-      this.showTip()
-      this.asynSetCoordinate()
+    updateTip() {
+      this.setContainerNode();
+      this.showTip();
+      this.asynSetCoordinate();
     },
 
     // 设置 tip 的容器
-    setContainerNode () {
+    setContainerNode() {
       const {
         $el,
         target,
         container,
         targetParentNode,
-        containerNode: oldNode
-      } = this
+        containerNode: oldNode,
+      } = this;
       // 目标元素的父级节点相同则不需要重新计算容器
-      if (!target || target.parentNode === targetParentNode) return
-      this.targetParentNode = target.parentNode
-      const newNode = container || getScrollContainer(target)
-      if (newNode === oldNode) return
+      if (!target || target.parentNode === targetParentNode) return;
+      this.targetParentNode = target.parentNode;
+      const newNode = container || getScrollContainer(target);
+      if (newNode === oldNode) return;
       if ($el.parentNode !== newNode) {
-        newNode.appendChild($el)
+        newNode.appendChild($el);
       }
-      const position = window.getComputedStyle(newNode, null).position
-      if (!position || position === 'static') {
-        newNode.style.position = 'relative'
+      const position = window.getComputedStyle(newNode, null).position;
+      if (!position || position === "static") {
+        newNode.style.position = "relative";
       }
       if (oldNode) {
-        oldNode.removeEventListener('scroll', this.scrollHandler, supportsPassive)
+        oldNode.removeEventListener(
+          "scroll",
+          this.scrollHandler,
+          supportsPassive
+        );
       }
       if (checkScrollable(newNode)) {
-        newNode.addEventListener('scroll', this.scrollHandler, supportsPassive)
+        newNode.addEventListener("scroll", this.scrollHandler, supportsPassive);
       }
-      this.containerNode = newNode
+      this.containerNode = newNode;
     },
 
-    setCoordinate () {
-      const { $el, target, containerNode, placements, arrowsSize } = this
-      if (!$el || !target || !containerNode) return
-      const placementInfo = computePlacementInfo(target, containerNode, $el, placements, arrowsSize)
-      const coordinate = placementInfo.mod === 'mid'
-        ? computeCoordinateBaseMid(placementInfo, arrowsSize)
-        : computeCoordinateBaseEdge(placementInfo, arrowsSize)
-      this.setArrowsPos(coordinate)
-      this.placement = coordinate.placement
-      const x = coordinate.x + containerNode.scrollLeft
-      const y = coordinate.y + containerNode.scrollTop
-      this.$el.style.transform = `translate3d(${x}px, ${y}px, 0)`
+    setCoordinate() {
+      const { $el, target, containerNode, placements, arrowsSize } = this;
+      if (!$el || !target || !containerNode) return;
+      const placementInfo = computePlacementInfo(
+        target,
+        containerNode,
+        $el,
+        placements,
+        arrowsSize
+      );
+      // console.log("placementInfo", placementInfo);
+      const coordinate =
+        placementInfo.mod === "mid"
+          ? computeCoordinateBaseMid(placementInfo, arrowsSize)
+          : computeCoordinateBaseEdge(placementInfo, arrowsSize);
+      this.setArrowsPos(coordinate);
+      this.placement = coordinate.placement;
+      const x = coordinate.x + containerNode.scrollLeft;
+      const y = coordinate.y + containerNode.scrollTop;
+      this.$el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
     },
 
-    asynSetCoordinate () {
-      this.$nextTick(this.setCoordinate)
+    asynSetCoordinate() {
+      this.$nextTick(this.setCoordinate);
     },
 
     // 设置小三角形的位置
-    setArrowsPos ({ placement, arrowsOffset }) {
-      this.arrowsPos = computeArrowPos(placement, arrowsOffset, this.arrowsSize)
+    setArrowsPos({ placement, arrowsOffset }) {
+      this.arrowsPos = computeArrowPos(
+        placement,
+        arrowsOffset,
+        this.arrowsSize
+      );
     },
 
     // 设置 tip 经过 duration ms 后的状态
-    setVisible (v) {
-      clearTimeout(this.visibleTimer)
+    setVisible(v) {
+      clearTimeout(this.visibleTimer);
       this.visibleTimer = setTimeout(() => {
-        this.visible = v
-        this.visibleTimer = null
-      }, this.duration)
+        this.visible = v;
+        this.visibleTimer = null;
+      }, this.duration);
     },
 
     // 参考元素父级容器发生滚动时的处理
     scrollHandler: debounce(function () {
-      this.setCoordinate()
+      this.setCoordinate();
     }, 200),
 
-    clearScrollEvent () {
+    clearScrollEvent() {
       if (this.containerNode) {
-        this.containerNode.removeEventListener('scroll', this.scrollHandler, supportsPassive)
+        this.containerNode.removeEventListener(
+          "scroll",
+          this.scrollHandler,
+          supportsPassive
+        );
       }
     },
 
-    removeParentNode () {
+    removeParentNode() {
       if (this.$el.parentNode) {
-        this.$el.parentNode.removeChild(this.$el)
+        this.$el.parentNode.removeChild(this.$el);
       }
     },
 
-    destroy () {
-      this.clearScrollEvent()
-      this.removeParentNode()
-      this.$destroy()
-    }
-  }
-}
+    destroy() {
+      this.clearScrollEvent();
+      this.removeParentNode();
+      this.$destroy();
+    },
+
+    //计算内容是否超出
+    isOverflow(el) {
+      const range = document.createRange();
+      range.setStart(el, 0);
+      range.setEnd(el, el.childNodes.length);
+      const rangeWidth = range.getBoundingClientRect().width;
+      const padding =
+        (Number.parseInt(getComputedStyle(el)["paddingLeft"], 10) || 0) +
+        (Number.parseInt(getComputedStyle(el)["paddingRight"], 10) || 0);
+      if (
+        rangeWidth + padding > el.offsetWidth ||
+        el.scrollWidth > el.offsetWidth
+      ) {
+        return true;
+      }
+      return false;
+    },
+  },
+};
 </script>
